@@ -1,0 +1,12 @@
+*.suo
+*.idv
+*.obj
+*.pdb
+*.ilk
+*.ipch
+*.db
+
+*.log
+*.tlog
+
+.vs/
