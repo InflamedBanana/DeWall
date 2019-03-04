@@ -5,6 +5,7 @@
 *.ilk
 *.ipch
 *.db
+*.idb
 
 *.log
 *.tlog
