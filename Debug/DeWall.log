@@ -1,5 +1,0 @@
-﻿  Delaunay.cpp
-b:\projects\dewalltriangulation\src\delaunay.cpp(154): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?
-  main.cpp
-b:\projects\dewalltriangulation\src\main.cpp(101): fatal error C1010: unexpected end of file while looking for precompiled header. Did you forget to add '#include "pch.h"' to your source?
-  Generating Code...
