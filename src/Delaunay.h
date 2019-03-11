@@ -7,9 +7,10 @@ namespace Delaunay
 {
     struct Edge
     {
-        Vect3<float> a;
-        Vect3<float> b;
-        Edge(const Vect3<float> &_a, const Vect3<float> &_b) : a(_a), b(_b) {}
+        short a;
+        short b;
+        short oppositePoint;
+        Edge(const int _a, const int _b, const int _opposite = -1) : a(_a), b(_b), oppositePoint(_opposite) {}
     };
 
     struct Plane
@@ -21,14 +22,14 @@ namespace Delaunay
 
     struct Triangle
     {
-        int a;
-        int b;
-        int c;
-        Triangle(const int _a, const int _b, const int _c) : a(_a), b(_b), c(_c) {}
+        Edge* a;
+        Edge* b;
+        Edge* c;
+        Triangle(Edge *_a, Edge *_b, Edge *_c) : a(_a), b(_b), c(_c) {}
     };
 
     typedef std::vector<Vect3<float>> PointSet;
 
 
-    std::vector<Triangle> Triangulate(const PointSet &_vertices, std::vector<Edge> *_edges = nullptr);
+    std::vector<Triangle> Triangulate(const PointSet &_vertices, std::vector<Edge> *_edges = nullptr, std::vector<Vect3<float>> *_convexHull = nullptr);
 }
