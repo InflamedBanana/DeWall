@@ -33,16 +33,16 @@ namespace Math3D
     }
 
     template<typename T>
-    bool RayPlaneIntersection(const Vect3<T> &_rayStart, const Vect3<T> &_rayDir, const Vect3<T> &_planePoint, const Vect3<T> &_planeNorm)
+    bool LinePlaneIntersection(const Vect3<T> &_rayStart, const Vect3<T> &_rayDir, const Vect3<T> &_planePoint, const Vect3<T> &_planeNorm)
     {
         float D = Dot(_planeNorm, _rayDir);
         float N = -Dot(_planeNorm, _rayStart - _planePoint);
 
-        if (fabs(D) < .0000001f)
+        if (fabs(D) < .000001f)
             return false;
 
         float sI = N / D;
-        if (sI < 0)
+        if (sI < 0 || sI > 1)
             return false;
 
         return true;
