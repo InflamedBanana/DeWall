@@ -122,7 +122,7 @@ namespace Delaunay
         return cross > 0 ? 1 : (cross < 0 ? -1 : 0);
     }
 
-    vector<Vect3<float>>* GetConvexHull(vector<Vect3<float>> _pointSet)
+    vector<Vect3<float>> GetConvexHull(vector<Vect3<float>> _pointSet)
     {
         auto lowestZCoord = min_element(_pointSet.begin(), _pointSet.end(), [](const Vect3<float>& a, const Vect3<float>& b) { return (a.z < b.z || (a.z == b.z && a.x < b.x)); });
         auto p = *lowestZCoord;
@@ -155,24 +155,24 @@ namespace Delaunay
             }
         }
 
-        vector<Vect3<float>>* convexHull = new vector<Vect3<float>>();
-        convexHull->push_back(p);
+        vector<Vect3<float>> convexHull = vector<Vect3<float>>();
+        convexHull.push_back(p);
 
         for (const auto &point : _pointSet)
         {
-            while (convexHull->size() > 1 && CounterClockWise((*convexHull)[convexHull->size() - 2], convexHull->back(), point) < 0)
-                convexHull->pop_back();
+            while (convexHull.size() > 1 && CounterClockWise(convexHull[convexHull.size() - 2], convexHull.back(), point) < 0)
+                convexHull.pop_back();
 
-            convexHull->push_back(point);
+            convexHull.push_back(point);
         }
 
         return convexHull;
     }
 
-    void MakeSimplex(const Edge &_edge, const PointSet &_pointSet, Triangle *&_triangle, const vector<Vect3<float>> *_convexHull)
+    void MakeSimplex(const Edge &_edge, const PointSet &_pointSet, Triangle *&_triangle, const vector<Vect3<float>> &_convexHull)
     {
-        if (find((*_convexHull).begin(), (*_convexHull).end(), _pointSet[_edge.a]) != (*_convexHull).end() &&
-            find((*_convexHull).begin(), (*_convexHull).end(), _pointSet[_edge.b]) != (*_convexHull).end())
+        if (find(_convexHull.begin(), _convexHull.end(), _pointSet[_edge.a]) != _convexHull.end() &&
+            find(_convexHull.begin(), _convexHull.end(), _pointSet[_edge.b]) != _convexHull.end())
         {
             _triangle = nullptr;
             return;
@@ -212,30 +212,24 @@ namespace Delaunay
     }
 
     void AddEdgeToAFLs(const PointSet &_vertices, const Edge &_edge, const Plane &_wall, const PointSet &_p1, vector<Edge> &_aflw, vector<Edge> &_afl1, vector<Edge> &_afl2 )
+    {
+        if (Math3D::LinePlaneIntersection(_vertices[_edge.a], _vertices[_edge.b] - _vertices[_edge.a], _wall.position, _wall.normal))
         {
-            if (Math3D::LinePlaneIntersection(_vertices[_edge.a], _vertices[_edge.b] - _vertices[_edge.a], _wall.position, _wall.normal))
-            {
-                _aflw.push_back(_edge);
-            }
-            else if (any_of(_p1.begin(), _p1.end(), [&_edge, &_vertices](const Vect3<float> &vertice) {return vertice == _vertices[_edge.a]; }))
-            {
-                _afl1.push_back(_edge);
-            }
-            else
-                _afl2.push_back(_edge);
+            _aflw.push_back(_edge);
         }
-  
+        else if (any_of(_p1.begin(), _p1.end(), [&_edge, &_vertices](const Vect3<float> &vertice) {return vertice == _vertices[_edge.a]; }))
+        {
+            _afl1.push_back(_edge);
+        }
+        else
+            _afl2.push_back(_edge);
+    }
 
-    std::vector<Triangle> Triangulate(const PointSet &_pointSet, std::vector<Edge> *_afl, std::vector<Vect3<float>> *_convexHull)
+    std::vector<Triangle> Triangulate(const PointSet &_pointSet, std::vector<Edge> *_afl, std::vector<Vect3<float>> &_convexHull)
     {
         vector<Edge> aflw, afl1, afl2;
         vector<Triangle> triangles;
         PointSet p1, p2;
-
-        if (_convexHull == nullptr)
-        {
-            _convexHull = GetConvexHull(_pointSet);
-        }
 
         Plane wall = GetDividingPlane(_pointSet);
 
@@ -254,7 +248,7 @@ namespace Delaunay
         {
             AddEdgeToAFLs(_pointSet, edge, wall, p1, aflw, afl1, afl2);
         }
-        int i = 0;
+        
         while (aflw.size() > 0)
         {
             auto edge = new Edge(aflw.back());
@@ -275,16 +269,23 @@ namespace Delaunay
 
         if (afl1.size() > 0)
         {
-            auto afl1Triangles = Triangulate(p1, &afl1);
+            auto afl1Triangles = Triangulate(p1, &afl1, _convexHull);
             triangles.insert(triangles.end(), afl1Triangles.begin(), afl1Triangles.end());
         }
         if (afl2.size() > 0)
         {
-            auto afl2Triangles = Triangulate(p2, &afl2);
+            auto afl2Triangles = Triangulate(p2, &afl2, _convexHull);
             triangles.insert(triangles.end(), afl2Triangles.begin(), afl2Triangles.end());
         }
 
         return triangles;
+    }
+
+    std::vector<Triangle> Triangulate(const PointSet &_pointSet)
+    {
+        auto convexHull = GetConvexHull(_pointSet);
+        
+        return Triangulate(_pointSet, nullptr, convexHull);
     }
 
 } // namespace Delaunay

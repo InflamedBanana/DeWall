@@ -31,5 +31,5 @@ namespace Delaunay
     typedef std::vector<Vect3<float>> PointSet;
 
 
-    std::vector<Triangle> Triangulate(const PointSet &_vertices, std::vector<Edge> *_edges = nullptr, std::vector<Vect3<float>> *_convexHull = nullptr);
+    std::vector<Triangle> Triangulate(const PointSet &_vertices);
 }
