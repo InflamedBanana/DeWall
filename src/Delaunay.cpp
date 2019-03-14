@@ -11,7 +11,8 @@ using namespace std;
 
 namespace Delaunay
 {
-    
+    const PointSet *globalPointSet = nullptr;
+
     void PartitionPointSet(const std::vector<Vect3<float>> &pointSet, const Plane &wall, std::vector<Vect3<float>> &p1, std::vector<Vect3<float>> &p2)
     {
         for (auto &point : pointSet)
@@ -111,6 +112,10 @@ namespace Delaunay
                 circumcircleRadius = radius;
             }
         }
+        
+        a = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[a]) - globalPointSet->begin());
+        b = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[b]) - globalPointSet->begin());
+        c = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[c]) - globalPointSet->begin());
 
         return Triangle(new Edge(a, b, c), new Edge(b, c, a), new Edge(c, a, b));
     }
@@ -171,53 +176,68 @@ namespace Delaunay
 
     void MakeSimplex(const Edge &_edge, const PointSet &_pointSet, Triangle *&_triangle, const vector<Vect3<float>> &_convexHull)
     {
-        if (find(_convexHull.begin(), _convexHull.end(), _pointSet[_edge.a]) != _convexHull.end() &&
-            find(_convexHull.begin(), _convexHull.end(), _pointSet[_edge.b]) != _convexHull.end())
+        auto &a = (*globalPointSet)[_edge.a];
+        auto &b = (*globalPointSet)[_edge.b];
+        auto &opposite = (*globalPointSet)[_edge.oppositePoint];
+
+        if (find(_convexHull.begin(), _convexHull.end(), a) != _convexHull.end() &&
+            find(_convexHull.begin(), _convexHull.end(), b) != _convexHull.end())
         {
             _triangle = nullptr;
             return;
         }
 
-        Vect3<float> edgeCenter = (_pointSet[_edge.a] + _pointSet[_edge.b]) / 2.0f;
-        Vect3<float> planeNormal = GetCircumCenter(_pointSet[_edge.a], _pointSet[_edge.b], _pointSet[_edge.oppositePoint]) - edgeCenter;
+        Vect3<float> edgeCenter = (a + b) / 2.0f;
+        Vect3<float> planeNormal = GetCircumCenter(a, b, opposite) - edgeCenter;
         Plane halfPlane(planeNormal, edgeCenter);
 
-        int pointIndex = -1;
+        int cIndex = -1;
         float circumcircleRadius = .0f;
         
-        bool cSide = Dot(_pointSet[_edge.oppositePoint] - halfPlane.position, halfPlane.normal) >= .0f;
-        float distAB = (_pointSet[_edge.b] - _pointSet[_edge.a]).GetMagnitude();
+        bool cSide = Dot(opposite - halfPlane.position, halfPlane.normal) >= .0f;
+        float distAB = (b - a).GetMagnitude();
         
         for (int i = 0; i < _pointSet.size(); ++i)
         {
             bool halfPlanePos = Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f;
 
-            if (i == _edge.a || i == _edge.b || _edge.oppositePoint == i ||
+            if (_pointSet[i] == a || _pointSet[i] == b || opposite == _pointSet[i] ||
                 cSide && halfPlanePos || !cSide && !halfPlanePos ) // check if point is in HalfSpace.
                 continue;
 
             float radius = 
-                GetCircumCircleRadius(distAB, 
-                (_pointSet[i] - _pointSet[_edge.b]).GetMagnitude(), 
-                (_pointSet[i] - _pointSet[_edge.a]).GetMagnitude());
+                GetCircumCircleRadius(distAB,
+                (_pointSet[i] - b).GetMagnitude(), 
+                (_pointSet[i] - a).GetMagnitude());
 
-            if (radius < circumcircleRadius || pointIndex == -1)
+            if (radius < circumcircleRadius || cIndex == -1)
             {
-                pointIndex = i;
+                cIndex = i;
                 circumcircleRadius = radius;
             }
         }
-            
-        _triangle = new Triangle(const_cast<Edge*>(&_edge), new Edge(pointIndex, _edge.a, _edge.b), new Edge(_edge.b, pointIndex, _edge.a));
+        
+        if (cIndex == -1)
+        {
+            _triangle = nullptr;
+            return;
+        }
+        
+        auto cIterator = find(globalPointSet->begin(), globalPointSet->end(), _pointSet[cIndex]);
+        cIndex = static_cast<int>(cIterator - globalPointSet->begin());
+
+        _triangle = new Triangle(const_cast<Edge*>(&_edge), new Edge(cIndex, _edge.a, _edge.b), new Edge(_edge.b, cIndex, _edge.a));
     }
 
-    void AddEdgeToAFLs(const PointSet &_vertices, const Edge &_edge, const Plane &_wall, const PointSet &_p1, vector<Edge> &_aflw, vector<Edge> &_afl1, vector<Edge> &_afl2 )
+    void AddEdgeToAFLs(const Edge &_edge, const Plane &_wall, const PointSet &_p1, vector<Edge> &_aflw, vector<Edge> &_afl1, vector<Edge> &_afl2)
     {
-        if (Math3D::LinePlaneIntersection(_vertices[_edge.a], _vertices[_edge.b] - _vertices[_edge.a], _wall.position, _wall.normal))
+        auto &a = (*globalPointSet)[_edge.a];
+        auto &b = (*globalPointSet)[_edge.b];
+        if (Math3D::LinePlaneIntersection(a, b - a, _wall.position, _wall.normal))
         {
             _aflw.push_back(_edge);
         }
-        else if (any_of(_p1.begin(), _p1.end(), [&_edge, &_vertices](const Vect3<float> &vertice) {return vertice == _vertices[_edge.a]; }))
+        else if (any_of(_p1.begin(), _p1.end(), [&_edge, &a](const Vect3<float> &vertice) {return vertice == a; }))
         {
             _afl1.push_back(_edge);
         }
@@ -246,7 +266,7 @@ namespace Delaunay
         }
         for (const auto& edge : *_afl)
         {
-            AddEdgeToAFLs(_pointSet, edge, wall, p1, aflw, afl1, afl2);
+            AddEdgeToAFLs(edge, wall, p1, aflw, afl1, afl2);
         }
         
         while (aflw.size() > 0)
@@ -261,17 +281,18 @@ namespace Delaunay
             {
                 triangles.push_back(*triangle);
 
-                AddEdgeToAFLs(_pointSet, *triangle->b , wall, p1, aflw, afl1, afl2);
-                AddEdgeToAFLs(_pointSet, *triangle->c, wall, p1, aflw, afl1, afl2);
+                AddEdgeToAFLs(*triangle->b , wall, p1, aflw, afl1, afl2);
+                AddEdgeToAFLs(*triangle->c, wall, p1, aflw, afl1, afl2);
             }
         }
-        return triangles;
+        //return triangles;
 
         if (afl1.size() > 0)
         {
             auto afl1Triangles = Triangulate(p1, &afl1, _convexHull);
             triangles.insert(triangles.end(), afl1Triangles.begin(), afl1Triangles.end());
         }
+      
         if (afl2.size() > 0)
         {
             auto afl2Triangles = Triangulate(p2, &afl2, _convexHull);
@@ -284,8 +305,12 @@ namespace Delaunay
     std::vector<Triangle> Triangulate(const PointSet &_pointSet)
     {
         auto convexHull = GetConvexHull(_pointSet);
-        
-        return Triangulate(_pointSet, nullptr, convexHull);
+
+        globalPointSet = &_pointSet;
+        auto triangles = Triangulate(_pointSet, nullptr, convexHull);
+
+        globalPointSet = nullptr;
+        return triangles;
     }
 
 } // namespace Delaunay
