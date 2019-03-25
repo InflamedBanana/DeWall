@@ -11,7 +11,16 @@ namespace Delaunay
         short b;
         short oppositePoint;
         Edge(const int _a, const int _b, const int _opposite = -1) : a(_a), b(_b), oppositePoint(_opposite) {}
+
+       /* friend bool operator==(const Edge &_a, const Edge &_b);
+        friend bool operator!=(const Edge &_a, const Edge &_b);*/
+
+        bool operator==(const Edge &_b) { return a == _b.a && b == _b.b || a == _b.b && b == _b.a; }
+        bool operator!=(const Edge &_b) { return !(*this == _b); }
     };
+
+   /* bool operator==(const Edge &_a, const Edge &_b) { return _a.a == _b.a && _a.b == _b.b; }
+    bool operator!=(const Edge &_a, const Edge &_b) { return !(_a == _b); }*/
 
     struct Plane
     {
