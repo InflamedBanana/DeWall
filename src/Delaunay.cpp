@@ -181,23 +181,43 @@ namespace Delaunay
             return;
         }
 
-        Vect3<float> edgeCenter = (a + b) / 2.0f;
-        Vect3<float> planeNormal = GetCircumCenter(a, b, opposite) - edgeCenter;
-        Plane halfPlane(planeNormal, edgeCenter);
+       /* Vect3<float> edgeCenter = (a + b) / 2.0f;
+        Vect3<float> planeNormal = GetCircumCenter(a, b, opposite) - edgeCenter;*/
+
+       /* float dot = Dot((b - a), (opposite - a));
+        planeNormal = ((b-a) ) * dot;
+        planeNormal = opposite - (a + planeNormal);*/
+       
+        float distAB = (b - a).GetMagnitude();
+
+        auto abDir = (b - a) / distAB;
+        auto acDir = (opposite - a);
+
+        float doot = Dot(abDir, acDir);
+        Vect3<float> bisectionPos = (a + (abDir * doot));
+        Vect3<float> bisectionDir = (opposite - bisectionPos);
+
+        //Vect3<float> testNormal = opposite - (a + (abDir * doot));
+
+        //Plane halfPlane(planeNormal, edgeCenter);
+        Plane halfPlane(bisectionDir, bisectionPos);
+        //Plane halfPlane(opposite - (a + ((b - a) * dot)), a + (b - a) * dot);
 
         int cIndex = -1;
         float circumcircleRadius = .0f;
-        
-        bool cSide = Dot(opposite - halfPlane.position, halfPlane.normal) >= .0f;
-        float distAB = (b - a).GetMagnitude();
-        
+
+        //bool cSide = Dot(opposite - halfPlane.position, halfPlane.normal) >= .0f;
+
         for (int i = 0; i < _pointSet.size(); ++i)
         {
-            bool halfPlanePos = Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f;
+            //bool halfPlanePos = Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f;
+            //debugImg->draw_line(halfPlane.position.x, halfPlane.position.z, (halfPlane.position + (_pointSet[i] - halfPlane.position)).x, (halfPlane.position + (_pointSet[i] - halfPlane.position)).z, yellow);
 
             if (_pointSet[i] == a || _pointSet[i] == b || opposite == _pointSet[i] ||
-                cSide && halfPlanePos || !cSide && !halfPlanePos ) // check if point is in HalfSpace.
+                /*cSide && */Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f /*|| !cSide && !halfPlanePos*/) // check if point is in HalfSpace.
+            {  
                 continue;
+            }
 
             float radius = 
                 GetCircumCircleRadius(distAB,
@@ -206,8 +226,10 @@ namespace Delaunay
 
             auto center = GetCircumCenter(a, b, _pointSet[i]);
 
-            if (Dot(center - halfPlane.position, halfPlane.normal) >= .0f && cSide)
+            if (Dot(center - halfPlane.position, halfPlane.normal) >= .0f /*&& cSide*/)
+            {
                 radius *= -1;
+            }
 
             if (radius < circumcircleRadius || cIndex == -1)
             {
