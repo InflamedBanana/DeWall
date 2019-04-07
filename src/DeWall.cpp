@@ -9,8 +9,6 @@
 using namespace std;
 using namespace Math3D;
 
-#define SQRT(x) (x*x)
-
 namespace DeWall
 {
     const PointSet *globalPointSet = nullptr;
@@ -87,10 +85,6 @@ namespace DeWall
                 circumcircleRadius = radius;
             }
         }
-        
-        a = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[a]) - globalPointSet->begin());
-        b = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[b]) - globalPointSet->begin());
-        c = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[c]) - globalPointSet->begin());
 
         return Triangle(a, b, c);
     }
@@ -161,13 +155,6 @@ namespace DeWall
             _triangle = nullptr;
             return;
         }
-
-       /* Vect3<float> edgeCenter = (a + b) / 2.0f;
-        Vect3<float> planeNormal = GetCircumCenter(a, b, opposite) - edgeCenter;*/
-
-       /* float dot = Dot((b - a), (opposite - a));
-        planeNormal = ((b-a) ) * dot;
-        planeNormal = opposite - (a + planeNormal);*/
        
         float distAB = (b - a).GetMagnitude();
 
@@ -176,18 +163,11 @@ namespace DeWall
 
         float doot = Dot(abDir, acDir);
         Vect3<float> bisectionPos = (a + (abDir * doot));
-        Vect3<float> bisectionDir = (opposite - bisectionPos);
 
-        //Vect3<float> testNormal = opposite - (a + (abDir * doot));
-
-        //Plane halfPlane(planeNormal, edgeCenter);
-        Plane halfPlane(bisectionDir, bisectionPos);
-        //Plane halfPlane(opposite - (a + ((b - a) * dot)), a + (b - a) * dot);
+        Plane halfPlane(opposite - bisectionPos, bisectionPos);
 
         int cIndex = -1;
         float circumcircleRadius = .0f;
-
-        //bool cSide = Dot(opposite - halfPlane.position, halfPlane.normal) >= .0f;
 
         for (int i = 0; i < _pointSet.size(); ++i)
         {
@@ -276,18 +256,7 @@ namespace DeWall
         }
 
         for (const auto& edge : *_afl)
-        {
 			AddEdgeToAFLs(edge, wall, p1, aflw, afl1, afl2);
-
-            /*auto &a = (*globalPointSet)[edge.a];
-            auto &b = (*globalPointSet)[edge.b];
-            if (Math3D::LinePlaneIntersection(a, b - a, wall.position, wall.normal))
-                aflw.push_back(edge);
-            else if (any_of(p1.begin(), p1.end(), [&edge, &a](const Vect3<float> &vertice) {return vertice == a; }))
-                afl1.push_back(edge);
-            else
-                afl2.push_back(edge);*/
-        }
         
         while (aflw.size() > 0)
         {
