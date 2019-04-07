@@ -1,11 +1,20 @@
 #pragma once
 
+#ifndef DEF_MATH3D
+#define DEF_MATH3D
+
 #include "Vect3.h"
-#include <iostream>
 #include <cmath>
-using namespace std;
+
 namespace Math3D
 {
+    struct Plane
+    {
+        Vect3<float> normal;
+        Vect3<float> position;
+        Plane(const Vect3<float> &_normal, const Vect3<float> &_position) : normal(_normal), position(_position) {}
+    };
+
     //0 = no intersection
     //1 = intersection at _intersectionPoint
     //2 = parallel to plane
@@ -47,5 +56,25 @@ namespace Math3D
 
         return true;
     }
+
+    float DistanceToPlane(const Vect3<float> &_point, const Plane &_plane)
+    {
+        return abs(Dot((_point - _plane.position), _plane.normal));
+    }
+
+    float GetCircumCircleRadius(const float _distAB, const float _distBC, const float _distAC)
+    {
+        return ((_distAB * _distBC * _distAC) / sqrt(((_distAB + _distBC + _distAC)*(_distBC + _distAC - _distAB)*(_distAC + _distAB - _distBC)*(_distAB + _distBC - _distAC))));
+    }
+
+    Vect3<float> GetCircumcircleCenter(const Vect3<float> &_A, const Vect3<float> &_B, const Vect3<float> &_C)
+    {
+        float a = (_B - _C).GetSqrMagnitude();
+        float b = (_A - _C).GetSqrMagnitude();
+        float c = (_B - _A).GetSqrMagnitude();
+
+        return (a * (b + c - a) * _A + b * (c + a - b) * _B + c * (a + b - c) * _C) / (a * (b + c - a) + b * (c + a - b) + c * (a + b - c));
+    }
 }
-  
+
+#endif // !DEF_MATH3D

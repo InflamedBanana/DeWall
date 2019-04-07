@@ -7,6 +7,7 @@
 #include <cmath>
 
 using namespace std;
+using namespace Math3D;
 
 #define SQRT(x) (x*x)
 
@@ -34,26 +35,6 @@ namespace Delaunay
             return Plane(Vect3<float>(1.0f, .0f, .0f), position);
         else
             return Plane(Vect3<float>(.0f, .0f, 1.0f), position);
-    }
-
-
-    float DistanceToPlane(const Vect3<float> &_point, const Plane &_plane)
-    {
-        return abs(Dot((_point - _plane.position), _plane.normal));
-    }
-
-    float GetCircumCircleRadius(const float _distAB, const float _distBC, const float _distAC)
-    {
-        return ((_distAB * _distBC * _distAC) / sqrt(((_distAB + _distBC + _distAC)*(_distBC + _distAC - _distAB)*(_distAC + _distAB - _distBC)*(_distAB + _distBC - _distAC))));
-    }
-
-    Vect3<float> GetCircumCenter(const Vect3<float> &_A, const Vect3<float> &_B, const Vect3<float> &_C)
-    {
-        float a = (_B - _C).GetSqrMagnitude();
-        float b = (_A - _C).GetSqrMagnitude();
-        float c = (_B - _A).GetSqrMagnitude();
-
-        return (a * (b + c - a) * _A + b * (c + a - b) * _B + c * (a + b - c) * _C) / (a * (b + c - a) + b * (c + a - b) + c * (a + b - c));
     }
 
     Triangle MakeFirstSimplex(const std::vector<Vect3<float>> &pointSet, const Plane &wall)
@@ -223,7 +204,7 @@ namespace Delaunay
             if (p * (p - distAB) * (p - distBC) * (p - distAC) == .0f)//Area
                 continue;
 
-            auto center = GetCircumCenter(a, b, _pointSet[i]);
+            auto center = GetCircumcircleCenter(a, b, _pointSet[i]);
 
             float radius = (center - a).GetMagnitude();
 
