@@ -31,10 +31,15 @@ namespace Delaunay
 
     struct Triangle
     {
-        Edge* a;
-        Edge* b;
-        Edge* c;
-        Triangle(Edge *_a, Edge *_b, Edge *_c) : a(_a), b(_b), c(_c) {}
+		int a;
+		int b;
+		int c;
+
+		Triangle(int _a, int _b, int _c) :a(_a), b(_b), c(_c) {}
+
+		Edge AB() const { return Edge(a, b, c); }
+		Edge BC() const { return Edge(b, c, a); }
+		Edge CA() const { return Edge(c, a, b); }
     };
 
     typedef std::vector<Vect3<float>> PointSet;

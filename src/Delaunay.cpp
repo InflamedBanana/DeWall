@@ -111,7 +111,7 @@ namespace Delaunay
         b = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[b]) - globalPointSet->begin());
         c = static_cast<int>(find(globalPointSet->begin(), globalPointSet->end(), pointSet[c]) - globalPointSet->begin());
 
-        return Triangle(new Edge(a, b, c), new Edge(b, c, a), new Edge(c, a, b));
+        return Triangle(a, b, c);
     }
 
     //> 0 if counterclockwise, < 0 if clockwise & == 0 is collinear
@@ -248,7 +248,7 @@ namespace Delaunay
         auto cIterator = find(globalPointSet->begin(), globalPointSet->end(), _pointSet[cIndex]);
         cIndex = static_cast<int>(cIterator - globalPointSet->begin());
 
-        _triangle = new Triangle(const_cast<Edge*>(&_edge), new Edge(cIndex, _edge.a, _edge.b), new Edge(_edge.b, cIndex, _edge.a));
+        _triangle = new Triangle(_edge.a, _edge.b, cIndex);
     }
 
     void UpdateAFL(const Edge &_edge, vector<Edge> &_afl)
@@ -288,22 +288,24 @@ namespace Delaunay
         {
             _afl = new vector<Edge>();
             Triangle t = MakeFirstSimplex(_pointSet, wall);
-            _afl->push_back(*t.a);
-            _afl->push_back(*t.b);
-            _afl->push_back(*t.c);
+            _afl->push_back(t.AB());
+            _afl->push_back(t.BC());
+            _afl->push_back(t.CA());
             triangles.push_back(t);
         }
 
         for (const auto& edge : *_afl)
         {
-            auto &a = (*globalPointSet)[edge.a];
+			AddEdgeToAFLs(edge, wall, p1, aflw, afl1, afl2);
+
+            /*auto &a = (*globalPointSet)[edge.a];
             auto &b = (*globalPointSet)[edge.b];
             if (Math3D::LinePlaneIntersection(a, b - a, wall.position, wall.normal))
                 aflw.push_back(edge);
             else if (any_of(p1.begin(), p1.end(), [&edge, &a](const Vect3<float> &vertice) {return vertice == a; }))
                 afl1.push_back(edge);
             else
-                afl2.push_back(edge);
+                afl2.push_back(edge);*/
         }
         
         while (aflw.size() > 0)
@@ -317,9 +319,9 @@ namespace Delaunay
             {
                 triangles.push_back(*triangle);
                
-                AddEdgeToAFLs(*triangle->a, wall, p1, aflw, afl1, afl2);
-                AddEdgeToAFLs(*triangle->b , wall, p1, aflw, afl1, afl2);
-                AddEdgeToAFLs(*triangle->c, wall, p1, aflw, afl1, afl2);
+                AddEdgeToAFLs(triangle->AB(), wall, p1, aflw, afl1, afl2);
+                AddEdgeToAFLs(triangle->BC() , wall, p1, aflw, afl1, afl2);
+                AddEdgeToAFLs(triangle->CA(), wall, p1, aflw, afl1, afl2);
             }
             else
                 aflw.pop_back();
