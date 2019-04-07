@@ -1,4 +1,4 @@
-#include "Delaunay.h"
+#include "DeWall.h"
 #include <iostream>
 #include <utility>
 #include "Math3D.h"
@@ -11,7 +11,7 @@ using namespace Math3D;
 
 #define SQRT(x) (x*x)
 
-namespace Delaunay
+namespace DeWall
 {
     const PointSet *globalPointSet = nullptr;
     const PointSet *convexHull = nullptr;
@@ -362,16 +362,19 @@ namespace Delaunay
 
         globalPointSet = &_pointSet;
 
-        Vect3<float> minBounds(.0f, .0f, .0f), maxBounds(1080, 0.0f, 720.0f);
+		auto maxIntValue = (int)((~((unsigned int)0)) >> 1);
+
+		Vect3<float> minBounds(maxIntValue, maxIntValue, maxIntValue),
+			maxBounds(-maxIntValue, -maxIntValue, -maxIntValue);
 
         for (const auto& point : *convexHull)
         {
             if (point.x < minBounds.x) minBounds.x = point.x;
-            if (point.x > maxBounds.x) maxBounds.x = point.x;
+            else if (point.x > maxBounds.x) maxBounds.x = point.x;
             if (point.y < minBounds.y) minBounds.y = point.y;
-            if (point.y > maxBounds.y) maxBounds.y = point.y;
+            else if (point.y > maxBounds.y) maxBounds.y = point.y;
             if (point.z < minBounds.z) minBounds.z = point.z;
-            if (point.z > maxBounds.z) maxBounds.z = point.z;
+            else if (point.z > maxBounds.z) maxBounds.z = point.z;
         }
 
         auto triangles = Triangulate(_pointSet, nullptr, minBounds, maxBounds);

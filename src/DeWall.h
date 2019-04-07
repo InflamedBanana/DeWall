@@ -3,7 +3,7 @@
 #include <vector>
 #include "Vect3.h"
 
-namespace Delaunay
+namespace DeWall
 {
     struct Edge
     {
