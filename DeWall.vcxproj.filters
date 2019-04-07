@@ -15,21 +15,21 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Delaunay.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Math3D.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Vect3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\DeWall.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\Delaunay.cpp">
+    <ClCompile Include="src\main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\main.cpp">
+    <ClCompile Include="src\DeWall.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
