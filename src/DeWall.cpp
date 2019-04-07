@@ -1,10 +1,8 @@
 #include "DeWall.h"
-#include <iostream>
-#include <utility>
 #include "Math3D.h"
 #include <algorithm>
-#include <stack>
-#include <cmath>
+#include <unordered_set>
+#include <numeric>
 
 using namespace std;
 using namespace Math3D;
@@ -12,7 +10,7 @@ using namespace Math3D;
 namespace DeWall
 {
     const PointSet *globalPointSet = nullptr;
-    const PointSet *convexHull = nullptr;
+    const unordered_set<int> *convexHull = nullptr;
 
     void PartitionPointSet(const std::vector<Vect3<float>> &pointSet, const Plane &wall, std::vector<Vect3<float>> &p1, std::vector<Vect3<float>> &p2)
     {
@@ -96,66 +94,72 @@ namespace DeWall
         return cross > 0 ? 1 : (cross < 0 ? -1 : 0);
     }
 
-    vector<Vect3<float>> GetConvexHull(vector<Vect3<float>> _pointSet)
+	//Algo is right, implementation is bad.
+    unordered_set<int> GetConvexHull()
     {
-        auto lowestZCoord = min_element(_pointSet.begin(), _pointSet.end(), [](const Vect3<float>& a, const Vect3<float>& b) { return (a.z < b.z || (a.z == b.z && a.x < b.x)); });
+		const PointSet &pointSet = *globalPointSet;
+
+		vector<int> indexes(pointSet.size());
+		std::iota(indexes.begin(), indexes.end(), 0);
+
+        auto lowestZCoord = min_element(pointSet.begin(), pointSet.end(), [](const Vect3<float>& a, const Vect3<float>& b) { return (a.z < b.z || (a.z == b.z && a.x < b.x)); });
         auto p = *lowestZCoord;
-        _pointSet.erase(lowestZCoord);
+		int pIndex = static_cast<int>(lowestZCoord - pointSet.begin());
+		indexes.erase(indexes.begin() + pIndex);
 
-        sort(_pointSet.begin(), _pointSet.end(), [&p](const Vect3<float>& a, const Vect3<float>& b)
-        {
-            Vect3<float> xAxis(1.0f, .0f, .0f);
-            auto vectA = a - p;
-            auto vectB = b - p;
-            float cosA = Dot(vectA, xAxis) / vectA.GetMagnitude();
-            float cosB = Dot(vectB, xAxis) / vectB.GetMagnitude();
-            return cosA > cosB;
-        });
+		sort(indexes.begin(), indexes.end(), [&p, &pointSet](const int& a, const int& b)
+		{
+			Vect3<float> xAxis(1.0f, .0f, .0f);
+			auto vectA = pointSet[a] - p;
+			auto vectB = pointSet[b] - p;
+			float cosA = Dot(vectA, xAxis) / vectA.GetMagnitude();
+			float cosB = Dot(vectB, xAxis) / vectB.GetMagnitude();
+			return cosA > cosB;
+		});
         //Very bad.
-        for (int i = _pointSet.size() - 1; i > 0; --i)
+		for (int i = indexes.size() - 1; i > 0; --i)
+		{
+			Vect3<float> xAxis(1.0f, .0f, .0f);
+			auto vectA = pointSet[indexes[i]] - p;
+			auto vectB = pointSet[indexes[i-1]] - p;
+			float cosA = Dot(vectA, xAxis) / vectA.GetMagnitude();
+			float cosB = Dot(vectB, xAxis) / vectB.GetMagnitude();
+
+			if (cosA == cosB)
+			{
+				if (vectA.GetMagnitude() > vectB.GetMagnitude())
+					indexes.erase(indexes.begin() + i - 1);
+				else
+					indexes.erase(indexes.begin() + i);
+			}
+		}
+
+        vector<int> convexHull = vector<int>();
+        convexHull.push_back(pIndex);
+
+		for(const auto &i : indexes)
         {
-            Vect3<float> xAxis(1.0f, .0f, .0f);
-            auto vectA = _pointSet[i] - p;
-            auto vectB = _pointSet[i - 1] - p;
-            float cosA = Dot(vectA, xAxis) / vectA.GetMagnitude();
-            float cosB = Dot(vectB, xAxis) / vectB.GetMagnitude();
-
-            if (cosA == cosB)
-            {
-                if (vectA.GetMagnitude() > vectB.GetMagnitude())
-                    _pointSet.erase(_pointSet.begin() + i - 1);
-                else
-                    _pointSet.erase(_pointSet.begin() + i);
-            }
-        }
-
-        vector<Vect3<float>> convexHull = vector<Vect3<float>>();
-        convexHull.push_back(p);
-
-        for (const auto &point : _pointSet)
-        {
-            while (convexHull.size() > 1 && CounterClockWise(convexHull[convexHull.size() - 2], convexHull.back(), point) < 0)
+            while (convexHull.size() > 1 && CounterClockWise(pointSet[convexHull[convexHull.size() - 2]], pointSet[convexHull.back()], pointSet[i]) < 0)
                 convexHull.pop_back();
 
-            convexHull.push_back(point);
+            convexHull.push_back(i);
         }
 
-        return convexHull;
+        return unordered_set<int>(convexHull.begin(), convexHull.end());
     }
 
-    void MakeSimplex(const Edge &_edge, const PointSet &_pointSet, Triangle *&_triangle, const vector<Vect3<float>> &_convexHull)
+    void MakeSimplex(const Edge &_edge, const PointSet &_pointSet, Triangle *&_triangle)
     {
         auto &a = (*globalPointSet)[_edge.a];
         auto &b = (*globalPointSet)[_edge.b];
         auto &opposite = (*globalPointSet)[_edge.oppositePoint];
 
-        if (find(_convexHull.begin(), _convexHull.end(), a) != _convexHull.end() &&
-            find(_convexHull.begin(), _convexHull.end(), b) != _convexHull.end())
+		if(convexHull->find(_edge.a) != convexHull->end() && convexHull->find(_edge.b) != convexHull->end())
         {
             _triangle = nullptr;
             return;
         }
-       
+			
         float distAB = (b - a).GetMagnitude();
 
         auto abDir = (b - a) / distAB;
@@ -263,7 +267,7 @@ namespace DeWall
             auto edge = new Edge(aflw.back());
             
             Triangle *triangle = nullptr;
-            MakeSimplex(*edge, _pointSet, triangle, *convexHull);
+            MakeSimplex(*edge, _pointSet, triangle);
 
             if (triangle != nullptr)
             {
@@ -325,32 +329,29 @@ namespace DeWall
 
     std::vector<Triangle> Triangulate(const PointSet &_pointSet)
     {
-        auto hull = GetConvexHull(_pointSet);
-        convexHull = &hull;
-
-
         globalPointSet = &_pointSet;
+
+        auto hull = GetConvexHull();
+        convexHull = &hull;
 
 		auto maxIntValue = (int)((~((unsigned int)0)) >> 1);
 
 		Vect3<float> minBounds(maxIntValue, maxIntValue, maxIntValue),
 			maxBounds(-maxIntValue, -maxIntValue, -maxIntValue);
 
-        for (const auto& point : *convexHull)
-        {
-            if (point.x < minBounds.x) minBounds.x = point.x;
-            else if (point.x > maxBounds.x) maxBounds.x = point.x;
-            if (point.y < minBounds.y) minBounds.y = point.y;
-            else if (point.y > maxBounds.y) maxBounds.y = point.y;
-            if (point.z < minBounds.z) minBounds.z = point.z;
-            else if (point.z > maxBounds.z) maxBounds.z = point.z;
-        }
-
+		for(const auto& point : *convexHull)
+		{
+			if (_pointSet[point].x < minBounds.x) minBounds.x = _pointSet[point].x;
+			else if (_pointSet[point].x > maxBounds.x) maxBounds.x = _pointSet[point].x;
+			if (_pointSet[point].y < minBounds.y) minBounds.y = _pointSet[point].y;
+			else if (_pointSet[point].y > maxBounds.y) maxBounds.y = _pointSet[point].y;
+			if (_pointSet[point].z < minBounds.z) minBounds.z = _pointSet[point].z;
+			else if (_pointSet[point].z > maxBounds.z) maxBounds.z = _pointSet[point].z;
+		}
         auto triangles = Triangulate(_pointSet, nullptr, minBounds, maxBounds);
 
         globalPointSet = nullptr;
         convexHull = nullptr;
-
 
         return triangles;
     }
