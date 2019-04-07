@@ -210,23 +210,24 @@ namespace Delaunay
 
         for (int i = 0; i < _pointSet.size(); ++i)
         {
-            //bool halfPlanePos = Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f;
-            //debugImg->draw_line(halfPlane.position.x, halfPlane.position.z, (halfPlane.position + (_pointSet[i] - halfPlane.position)).x, (halfPlane.position + (_pointSet[i] - halfPlane.position)).z, yellow);
-
             if (_pointSet[i] == a || _pointSet[i] == b || opposite == _pointSet[i] ||
-                /*cSide && */Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f /*|| !cSide && !halfPlanePos*/) // check if point is in HalfSpace.
+                Dot(_pointSet[i] - halfPlane.position, halfPlane.normal) >= .0f)
             {  
                 continue;
             }
 
-            float radius = 
-                GetCircumCircleRadius(distAB,
-                (_pointSet[i] - b).GetMagnitude(), 
-                (_pointSet[i] - a).GetMagnitude());
+            float distBC = (_pointSet[i] - b).GetMagnitude();
+            float distAC = (_pointSet[i] - a).GetMagnitude();
+
+            float p = (distAB + distBC + distAC) / 2.f;
+            if (p * (p - distAB) * (p - distBC) * (p - distAC) == .0f)//Area
+                continue;
 
             auto center = GetCircumCenter(a, b, _pointSet[i]);
 
-            if (Dot(center - halfPlane.position, halfPlane.normal) >= .0f /*&& cSide*/)
+            float radius = (center - a).GetMagnitude();
+
+            if (Dot(center - halfPlane.position, halfPlane.normal) >= .0f)
             {
                 radius *= -1;
             }
