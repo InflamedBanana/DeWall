@@ -67,13 +67,15 @@ namespace Math3D
         return ((_distAB * _distBC * _distAC) / sqrt(((_distAB + _distBC + _distAC)*(_distBC + _distAC - _distAB)*(_distAC + _distAB - _distBC)*(_distAB + _distBC - _distAC))));
     }
 
-    Vect3<float> GetCircumcircleCenter(const Vect3<float> &_A, const Vect3<float> &_B, const Vect3<float> &_C)
+	template<typename T>
+    Vect3<T> GetCircumcircleCenter(const Vect3<T> &_A, const Vect3<T> &_B, const Vect3<T> &_C)
     {
-        float a = (_B - _C).GetSqrMagnitude();
-        float b = (_A - _C).GetSqrMagnitude();
-        float c = (_B - _A).GetSqrMagnitude();
+		//had to use long long to be sure large values don't overflow ( can easily happen with bottom of division ).
+		long long int a = (_C - _B).GetSqrMagnitude();
+		long long int b = (_A - _C).GetSqrMagnitude();
+		long long int c = (_B - _A).GetSqrMagnitude();
 
-        return (a * (b + c - a) * _A + b * (c + a - b) * _B + c * (a + b - c) * _C) / (a * (b + c - a) + b * (c + a - b) + c * (a + b - c));
+		return (a * (b + c - a) * _A + b * (c + a - b) * _B + c * (a + b - c) * _C) / (a * (b + c - a) + b * (c + a - b) + c * (a + b - c));
     }
 }
 

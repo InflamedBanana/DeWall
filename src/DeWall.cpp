@@ -185,10 +185,10 @@ namespace DeWall
             float distAC = (_pointSet[i] - a).GetMagnitude();
 
             float p = (distAB + distBC + distAC) / 2.f;
-            if (p * (p - distAB) * (p - distBC) * (p - distAC) == .0f)//Area
+            if (p * (p - distAB) * (p - distBC) * (p - distAC) <= .0000001f )//Area
                 continue;
-
-            auto center = GetCircumcircleCenter(a, b, _pointSet[i]);
+			
+           auto center = GetCircumcircleCenter<float>(a, b, _pointSet[i]);
 
             float radius = (center - a).GetMagnitude();
 

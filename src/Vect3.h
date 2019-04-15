@@ -74,6 +74,11 @@ template <typename T> struct Vect3 {
     template <typename T>
     friend Vect3<T> operator/(const int &_a, const Vect3<T> &_v);
 
+	template <typename T>
+	friend Vect3<T> operator/(const Vect3<T> &_v, const long long int &_a);
+	template <typename T>
+	friend Vect3<T> operator/(const long long int &_a, const Vect3<T> &_v);
+
     template <typename T>
     friend Vect3<T> operator*(const Vect3<T> &_v, const float &_a);
     template <typename T>
@@ -83,6 +88,11 @@ template <typename T> struct Vect3 {
     friend Vect3<T> operator*(const Vect3<T> &_v, const int &_a);
     template <typename T>
     friend Vect3<T> operator*(const int &_a, const Vect3<T> &_v);
+
+	template <typename T>
+	friend Vect3<T> operator*(const Vect3<T> &_v, const long long int &_a);
+	template <typename T>
+	friend Vect3<T> operator*(const long long int &_a, const Vect3<T> &_v);
 
     Vect3 &operator+=(const Vect3 &_rhs) {
         x += _rhs.x;
@@ -170,6 +180,13 @@ Vect3<T> operator/(const Vect3<T> &_v, const float &_a)
 template <typename T>
 Vect3<T> operator/(const float &_a, const Vect3<T> &_v) { return _v / _a; }
 
+template <typename T>
+Vect3<T> operator/(const Vect3<T> &_v, const long long int &_a)
+{
+	return Vect3<T>(_v.x / _a, _v.y / _a, _v.z / _a);
+}
+template <typename T>
+Vect3<T> operator/(const long long int &_a, const Vect3<T> &_v) { return _v / _a; }
 
 template <typename T>
 Vect3<T> operator*(const Vect3<T> & _v, const float & _a)
@@ -186,6 +203,14 @@ Vect3<T> operator*(const Vect3<T> & _v, const int & _a)
 }
 template <typename T>
 Vect3<T> operator*(const int & _a, const Vect3<T> & _v) { return _v * _a; }
+
+template <typename T>
+Vect3<T> operator*(const Vect3<T> & _v, const long long int & _a)
+{
+	return Vect3<T>(_v.x * _a, _v.y * _a, _v.z * _a);
+}
+template <typename T>
+Vect3<T> operator*(const long long int & _a, const Vect3<T> & _v) { return _v * _a; }
 
 template <typename T>
 Vect3<T> operator+(const Vect3<T> &_v, const Vect3<T> &_v2)
